@@ -1,4 +1,4 @@
-import { Avatar, Box, Typography } from "@mui/material"
+import { Avatar, Box } from "@mui/material"
 
 export function Header() {
   return (
