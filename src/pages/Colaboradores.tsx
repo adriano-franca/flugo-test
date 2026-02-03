@@ -18,6 +18,7 @@ import {
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward"
 import { Header } from "../components/Header"
 import { ColaboradorCard } from "../components/ColaboradorCard"
+import { useNavigate } from "react-router-dom"
 
 const colaboradores = [
   {
@@ -64,6 +65,7 @@ function CustomStatusChip({ status }: { status: string }) {
 }
 
 export function Colaboradores() {
+  const navigate = useNavigate()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
 
@@ -87,6 +89,7 @@ export function Colaboradores() {
           disableElevation
           fullWidth={isMobile}
           sx={{ height: 40, px: 3 }}
+          onClick={() => navigate("/colaboradores/novo")}
         >
           Novo Colaborador
         </Button>
