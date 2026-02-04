@@ -5,24 +5,17 @@ const STORAGE_KEY = "avatar_admin_v1";
 export function usePerfil() {
   const nome = "Administrador";
 
-  const [foto, setFoto] = useState<string>(() => {
+  const [foto] = useState<string>(() => {
     const fotoSalva = localStorage.getItem(STORAGE_KEY);
-    return fotoSalva || "";
+    if (fotoSalva) return fotoSalva;
+
+    const randomId = Math.floor(Math.random() * 1000000);
+    const randomUrl = `https://i.pravatar.cc/150?u=${randomId}`;
+    
+    localStorage.setItem(STORAGE_KEY, randomUrl);
+    
+    return randomUrl;
   });
 
-  const atualizarFoto = (arquivo: File) => {
-    if (!arquivo) return;
-
-    const reader = new FileReader();
-    
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setFoto(base64String);
-      localStorage.setItem(STORAGE_KEY, base64String);
-    };
-
-    reader.readAsDataURL(arquivo);
-  };
-
-  return { nome, foto, atualizarFoto };
+  return { nome, foto };
 }
