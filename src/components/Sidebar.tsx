@@ -10,6 +10,8 @@ import {
   useTheme,
   useMediaQuery,
 } from "@mui/material"
+import LogoutIcon from '@mui/icons-material/Logout';
+import { useAuth } from "../contexts/AuthContext";
 import MenuIcon from "@mui/icons-material/Menu"
 import PeopleIcon from "@mui/icons-material/People"
 import { useState } from "react"
@@ -18,6 +20,7 @@ import { useNavigate, useLocation } from "react-router-dom"
 export function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { logout } = useAuth();
   
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
@@ -66,8 +69,14 @@ export function Sidebar() {
           />
         </ListItemButton>
       </List>
+      <ListItemButton onClick={logout}>
+        <ListItemIcon>
+          <LogoutIcon />
+        </ListItemIcon>
+        <ListItemText primary="Sair" />
+      </ListItemButton>
     </Box>
-  )
+  );
 
   if (isMobile) {
     return (
