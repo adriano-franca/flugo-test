@@ -1,90 +1,270 @@
 import {
   Box,
   Button,
-  FormControl,
-  InputLabel,
+  FormControlLabel,
+  Grid,
+  LinearProgress,
   MenuItem,
   Paper,
   Select,
+  Stack,
+  Step,
+  StepConnector,
+  StepContent,
+  StepLabel,
+  Stepper,
+  Switch,
   TextField,
   Typography,
-  Stack,
+  stepConnectorClasses,
+  styled,
   useTheme,
-  useMediaQuery,
 } from "@mui/material"
-import { Header } from "../components/Header"
-import ArrowBackIcon from "@mui/icons-material/ArrowBack"
+import Check from "@mui/icons-material/Check"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { Header } from "../components/Header"
+
+const CustomConnector = styled(StepConnector)(({ theme }) => ({
+  [`&.${stepConnectorClasses.alternativeLabel}`]: {
+    top: 10,
+    left: 'calc(-50% + 16px)',
+    right: 'calc(50% + 16px)',
+  },
+  [`&.${stepConnectorClasses.active}`]: {
+    [`& .${stepConnectorClasses.line}`]: {
+      borderColor: theme.palette.primary.main,
+    },
+  },
+  [`&.${stepConnectorClasses.completed}`]: {
+    [`& .${stepConnectorClasses.line}`]: {
+      borderColor: theme.palette.primary.main,
+    },
+  },
+  [`& .${stepConnectorClasses.line}`]: {
+    borderColor: '#eaeaf0',
+    borderTopWidth: 3,
+    borderRadius: 1,
+    minHeight: 24,
+    marginLeft: 15,
+    borderLeftWidth: 2,
+    borderLeftStyle: 'solid'
+  },
+}))
+
+function CustomStepIcon(props: { active?: boolean; completed?: boolean; icon: React.ReactNode }) {
+  const { active, completed, icon } = props
+  
+  return (
+    <Box
+      sx={{
+        zIndex: 1,
+        color: '#fff',
+        width: 32,
+        height: 32,
+        display: 'flex',
+        borderRadius: '50%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        fontWeight: 'bold',
+        bgcolor: active || completed ? 'primary.main' : '#E5E7EB',
+      }}
+    >
+      {completed ? <Check sx={{ fontSize: 18 }} /> : icon}
+    </Box>
+  )
+}
 
 export function NovoColaborador() {
   const navigate = useNavigate()
   const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"))
+
+  const [activeStep, setActiveStep] = useState(0)
+  const [formData, setFormData] = useState({
+    nome: "João da Silva",
+    email: "",
+    ativo: true,
+    departamento: "",
+  })
+
+  const steps = [
+    { label: "Infos Básicas" },
+    { label: "Infos Profissionais" },
+  ]
+
+  const handleNext = () => {
+    if (activeStep === steps.length - 1) {
+      navigate("/colaboradores")
+    } else {
+      setActiveStep((prev) => prev + 1)
+    }
+  }
+
+  const handleBack = () => {
+    if (activeStep === 0) {
+      navigate("/colaboradores")
+    } else {
+      setActiveStep((prev) => prev - 1)
+    }
+  }
+
+  const progressValue = activeStep === 0 ? 0 : 50
 
   return (
     <Box flex={1} p={{ xs: 2, md: 4 }} bgcolor="background.default" minHeight="100vh">
       <Header />
 
-      <Stack direction="row" alignItems="center" gap={2} mb={4}>
-        <Button 
-            onClick={() => navigate(-1)}
-            startIcon={<ArrowBackIcon />} 
-            sx={{ color: "text.secondary" }}
-        >
-            Voltar
-        </Button>
-        <Typography variant="h5" fontWeight="bold">
-          Novo Colaborador
+      <Box mb={1}>
+        <Typography variant="body2" color="text.secondary">
+          <span 
+            style={{ fontWeight: 600, color: theme.palette.text.primary, cursor: 'pointer' }} 
+            onClick={() => navigate('/colaboradores')}
+          >
+            Colaboradores
+          </span>
+          {" • "}
+          <span style={{ color: theme.palette.primary.main }}>Cadastrar Colaborador</span>
         </Typography>
-      </Stack>
+      </Box>
 
-      <Paper 
-        elevation={0} 
-        sx={{ 
-            p: 4, 
-            maxWidth: 800, 
-            borderRadius: 2,
-            mx: isMobile ? 0 : "auto"
-        }}
-      >
-        <Stack spacing={3}>
-          <Typography variant="h6" sx={{ mb: 1 }}>Dados Pessoais</Typography>
-          
-          <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-            <TextField label="Nome Completo" fullWidth required />
-            <TextField label="Email Corporativo" type="email" fullWidth required />
-          </Stack>
+      <Box display="flex" alignItems="center" gap={2} mb={4}>
+        <LinearProgress 
+          variant="determinate" 
+          value={progressValue} 
+          sx={{ 
+            flex: 1, 
+            height: 6, 
+            borderRadius: 5,
+            bgcolor: "#E5E7EB",
+            "& .MuiLinearProgress-bar": {
+              borderRadius: 5,
+            }
+          }} 
+        />
+        <Typography variant="caption" color="text.secondary" fontWeight="bold">
+          {progressValue}%
+        </Typography>
+      </Box>
 
-          <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-            <FormControl fullWidth>
-              <InputLabel>Departamento</InputLabel>
-              <Select label="Departamento" defaultValue="">
-                <MenuItem value="ti">TI</MenuItem>
-                <MenuItem value="design">Design</MenuItem>
-                <MenuItem value="marketing">Marketing</MenuItem>
-                <MenuItem value="produto">Produto</MenuItem>
-              </Select>
-            </FormControl>
+      <Grid container spacing={4}>
+        <Grid size={{ xs: 12, md: 3 }}>
+          <Stepper 
+            activeStep={activeStep} 
+            orientation="vertical" 
+            connector={<CustomConnector />}
+          >
+            {steps.map((step, index) => (
+              <Step key={step.label}>
+                <StepLabel
+                  StepIconComponent={(props) => (
+                    <CustomStepIcon {...props} icon={index + 1} />
+                  )}
+                >
+                  <Typography fontWeight={activeStep === index ? "bold" : "normal"} color={activeStep === index ? "text.primary" : "text.secondary"}>
+                    {step.label}
+                  </Typography>
+                </StepLabel>
+                <StepContent sx={{ borderLeft: '2px solid #E5E7EB', ml: '15px', mt: 0, pl: 0 }} /> 
+              </Step>
+            ))}
+          </Stepper>
+        </Grid>
 
-            <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
-              <Select label="Status" defaultValue="ativo">
-                <MenuItem value="ativo">Ativo</MenuItem>
-                <MenuItem value="inativo">Inativo</MenuItem>
-              </Select>
-            </FormControl>
-          </Stack>
+        <Grid size={{ xs: 12, md: 9 }}>
+          <Paper elevation={0} sx={{ p: 0, border: 'none', background: 'transparent', boxShadow: "none" }}>
+            
+            <Typography variant="h5" fontWeight="bold" mb={4}>
+               {activeStep === 0 ? "Informações Básicas" : "Informações Profissionais"}
+            </Typography>
 
-          <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
-            <Button variant="outlined" color="inherit" onClick={() => navigate(-1)}>
-              Cancelar
-            </Button>
-            <Button variant="contained" color="primary" size="large">
-              Salvar Cadastro
-            </Button>
-          </Box>
-        </Stack>
-      </Paper>
+            {activeStep === 0 && (
+              <Stack spacing={3} maxWidth={600}>
+                <TextField
+                  label="Nome"
+                  variant="outlined"
+                  fullWidth
+                  value={formData.nome}
+                  onChange={(e) => setFormData({...formData, nome: e.target.value})}
+                  sx={{
+                    "& .MuiOutlinedInput-root": { borderRadius: 2 }
+                  }}
+                />
+                
+                <TextField
+                  label="E-mail"
+                  placeholder="e.g. john@gmail.com"
+                  variant="outlined"
+                  fullWidth
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  sx={{
+                    "& .MuiOutlinedInput-root": { borderRadius: 2 }
+                  }}
+                />
+
+                <FormControlLabel
+                  control={
+                    <Switch 
+                      checked={formData.ativo} 
+                      onChange={(e) => setFormData({...formData, ativo: e.target.checked})}
+                      color="primary" 
+                    />
+                  }
+                  label={<Typography fontWeight={500} color="text.secondary">Ativar ao criar</Typography>}
+                />
+              </Stack>
+            )}
+
+            {activeStep === 1 && (
+              <Stack spacing={3} maxWidth={600}>
+                <Select
+                    displayEmpty
+                    value={formData.departamento}
+                    onChange={(e) => setFormData({...formData, departamento: e.target.value})}
+                    fullWidth
+                    sx={{ borderRadius: 2 }}
+                    renderValue={(selected) => {
+                        if (selected.length === 0) {
+                        return <Typography color="text.secondary">Selecione um departamento</Typography>;
+                        }
+                        return selected;
+                    }}
+                >
+                    <MenuItem value="TI">TI</MenuItem>
+                    <MenuItem value="Design">Design</MenuItem>
+                    <MenuItem value="Marketing">Marketing</MenuItem>
+                    <MenuItem value="Produto">Produto</MenuItem>
+                </Select>
+              </Stack>
+            )}
+
+            <Box display="flex" justifyContent="space-between" alignItems="center" maxWidth={600} mt={8}>
+                <Button 
+                    onClick={handleBack}
+                    sx={{ color: "text.secondary", fontWeight: "bold", textTransform: 'none' }}
+                >
+                    Voltar
+                </Button>
+
+                <Button 
+                    variant="contained" 
+                    color="primary"
+                    onClick={handleNext}
+                    sx={{ 
+                        px: 4, 
+                        py: 1, 
+                        borderRadius: 2, 
+                        fontWeight: "bold",
+                        boxShadow: 'none'
+                    }}
+                >
+                    {activeStep === steps.length - 1 ? "Concluir" : "Próximo"}
+                </Button>
+            </Box>
+
+          </Paper>
+        </Grid>
+      </Grid>
     </Box>
   )
 }
