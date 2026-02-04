@@ -1,7 +1,9 @@
 import {
   Box,
   Button,
+  FormControl,
   FormControlLabel,
+  FormHelperText,
   Grid,
   LinearProgress,
   MenuItem,
@@ -80,6 +82,7 @@ export function NovoColaborador() {
   const theme = useTheme()
 
   const [activeStep, setActiveStep] = useState(0)
+  
   const [formData, setFormData] = useState({
     nome: "João da Silva",
     email: "",
@@ -87,13 +90,46 @@ export function NovoColaborador() {
     departamento: "",
   })
 
+  const [errors, setErrors] = useState({
+    nome: false,
+    email: false,
+    departamento: false
+  })
+
   const steps = [
     { label: "Infos Básicas" },
     { label: "Infos Profissionais" },
   ]
 
+  const validateStep = () => {
+    let isValid = true
+    const newErrors = { nome: false, email: false, departamento: false }
+
+    if (activeStep === 0) {
+      if (!formData.nome.trim()) {
+        newErrors.nome = true
+        isValid = false
+      }
+      if (!formData.email.trim()) {
+        newErrors.email = true
+        isValid = false
+      }
+    } else if (activeStep === 1) {
+      if (!formData.departamento) {
+        newErrors.departamento = true
+        isValid = false
+      }
+    }
+
+    setErrors(newErrors)
+    return isValid
+  }
+
   const handleNext = () => {
+    if (!validateStep()) return
+
     if (activeStep === steps.length - 1) {
+      console.log("Dados finais:", formData)
       navigate("/colaboradores")
     } else {
       setActiveStep((prev) => prev + 1)
@@ -171,7 +207,15 @@ export function NovoColaborador() {
         </Grid>
 
         <Grid size={{ xs: 12, md: 9 }}>
-          <Paper elevation={0} sx={{ p: 0, border: 'none', background: 'transparent', boxShadow: "none" }}>
+          <Paper 
+            elevation={0} 
+            sx={{ 
+              p: 0, 
+              border: 'none', 
+              background: 'transparent',
+              boxShadow: 'none'
+            }}
+          >
             
             <Typography variant="h5" fontWeight="bold" mb={4}>
                {activeStep === 0 ? "Informações Básicas" : "Informações Profissionais"}
@@ -183,8 +227,14 @@ export function NovoColaborador() {
                   label="Nome"
                   variant="outlined"
                   fullWidth
+                  required
                   value={formData.nome}
-                  onChange={(e) => setFormData({...formData, nome: e.target.value})}
+                  onChange={(e) => {
+                    setFormData({...formData, nome: e.target.value})
+                    if(errors.nome) setErrors({...errors, nome: false})
+                  }}
+                  error={errors.nome}
+                  helperText={errors.nome ? "O nome é obrigatório" : ""}
                   sx={{
                     "& .MuiOutlinedInput-root": { borderRadius: 2 }
                   }}
@@ -195,8 +245,14 @@ export function NovoColaborador() {
                   placeholder="e.g. john@gmail.com"
                   variant="outlined"
                   fullWidth
+                  required
                   value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  onChange={(e) => {
+                    setFormData({...formData, email: e.target.value})
+                    if(errors.email) setErrors({...errors, email: false})
+                  }}
+                  error={errors.email}
+                  helperText={errors.email ? "O e-mail é obrigatório" : ""}
                   sx={{
                     "& .MuiOutlinedInput-root": { borderRadius: 2 }
                   }}
@@ -217,24 +273,29 @@ export function NovoColaborador() {
 
             {activeStep === 1 && (
               <Stack spacing={3} maxWidth={600}>
-                <Select
-                    displayEmpty
-                    value={formData.departamento}
-                    onChange={(e) => setFormData({...formData, departamento: e.target.value})}
-                    fullWidth
-                    sx={{ borderRadius: 2 }}
-                    renderValue={(selected) => {
-                        if (selected.length === 0) {
-                        return <Typography color="text.secondary">Selecione um departamento</Typography>;
-                        }
-                        return selected;
-                    }}
-                >
-                    <MenuItem value="TI">TI</MenuItem>
-                    <MenuItem value="Design">Design</MenuItem>
-                    <MenuItem value="Marketing">Marketing</MenuItem>
-                    <MenuItem value="Produto">Produto</MenuItem>
-                </Select>
+                <FormControl fullWidth error={errors.departamento} required>
+                    <Select
+                        displayEmpty
+                        value={formData.departamento}
+                        onChange={(e) => {
+                            setFormData({...formData, departamento: e.target.value})
+                            if(errors.departamento) setErrors({...errors, departamento: false})
+                        }}
+                        sx={{ borderRadius: 2 }}
+                        renderValue={(selected) => {
+                            if (selected.length === 0) {
+                            return <Typography color={errors.departamento ? "error" : "text.secondary"}>Selecione um departamento</Typography>;
+                            }
+                            return selected;
+                        }}
+                    >
+                        <MenuItem value="TI">TI</MenuItem>
+                        <MenuItem value="Design">Design</MenuItem>
+                        <MenuItem value="Marketing">Marketing</MenuItem>
+                        <MenuItem value="Produto">Produto</MenuItem>
+                    </Select>
+                    {errors.departamento && <FormHelperText>Selecione uma opção</FormHelperText>}
+                </FormControl>
               </Stack>
             )}
 
