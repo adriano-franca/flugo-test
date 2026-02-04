@@ -1,6 +1,6 @@
 import { Box } from "@mui/material"
 import { Routes, Route, Navigate } from "react-router-dom"
-import { Sidebar } from "./components/SideBar"
+import { Sidebar } from "./components/Sidebar"
 import { Colaboradores } from "./pages/Colaboradores"
 import { NovoColaborador } from "./pages/NovoColaborador"
 
