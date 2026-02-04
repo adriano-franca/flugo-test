@@ -26,6 +26,7 @@ import Check from "@mui/icons-material/Check"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Header } from "../components/Header"
+import { useColaboradores } from "../hooks/useColaboradores"
 
 const CustomConnector = styled(StepConnector)(({ theme }) => ({
   [`&.${stepConnectorClasses.alternativeLabel}`]: {
@@ -80,11 +81,14 @@ function CustomStepIcon(props: { active?: boolean; completed?: boolean; icon: Re
 export function NovoColaborador() {
   const navigate = useNavigate()
   const theme = useTheme()
+  
+  const { adicionarColaborador } = useColaboradores()
 
   const [activeStep, setActiveStep] = useState(0)
+  const [salvando, setSalvando] = useState(false)
   
   const [formData, setFormData] = useState({
-    nome: "João da Silva",
+    nome: "",
     email: "",
     ativo: true,
     departamento: "",
@@ -125,12 +129,27 @@ export function NovoColaborador() {
     return isValid
   }
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!validateStep()) return
 
     if (activeStep === steps.length - 1) {
-      console.log("Dados finais:", formData)
-      navigate("/colaboradores")
+      setSalvando(true)
+      
+      const sucesso = await adicionarColaborador({
+        nome: formData.nome,
+        email: formData.email,
+        departamento: formData.departamento,
+        ativo: formData.ativo
+      })
+
+      setSalvando(false)
+
+      if (sucesso) {
+        navigate("/colaboradores")
+      } else {
+        alert("Erro ao salvar colaborador. Tente novamente.")
+      }
+
     } else {
       setActiveStep((prev) => prev + 1)
     }
@@ -271,6 +290,7 @@ export function NovoColaborador() {
               </Stack>
             )}
 
+            {/* Passo 2 */}
             {activeStep === 1 && (
               <Stack spacing={3} maxWidth={600}>
                 <FormControl fullWidth error={errors.departamento} required>
@@ -299,9 +319,11 @@ export function NovoColaborador() {
               </Stack>
             )}
 
+            {/* Rodapé com Botões */}
             <Box display="flex" justifyContent="space-between" alignItems="center" maxWidth={600} mt={8}>
                 <Button 
                     onClick={handleBack}
+                    disabled={salvando}
                     sx={{ color: "text.secondary", fontWeight: "bold", textTransform: 'none' }}
                 >
                     Voltar
@@ -311,6 +333,7 @@ export function NovoColaborador() {
                     variant="contained" 
                     color="primary"
                     onClick={handleNext}
+                    disabled={salvando}
                     sx={{ 
                         px: 4, 
                         py: 1, 
@@ -319,7 +342,7 @@ export function NovoColaborador() {
                         boxShadow: 'none'
                     }}
                 >
-                    {activeStep === steps.length - 1 ? "Concluir" : "Próximo"}
+                    {salvando ? "Salvando..." : (activeStep === steps.length - 1 ? "Concluir" : "Próximo")}
                 </Button>
             </Box>
 

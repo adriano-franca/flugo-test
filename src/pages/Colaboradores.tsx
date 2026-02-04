@@ -2,8 +2,10 @@ import {
   Avatar,
   Box,
   Button,
+  Chip,
   Grid,
   Paper,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -12,40 +14,12 @@ import {
   Typography,
   useMediaQuery,
   useTheme,
-  Stack,
-  Chip,
 } from "@mui/material"
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward"
+import { useNavigate } from "react-router-dom"
 import { Header } from "../components/Header"
 import { ColaboradorCard } from "../components/ColaboradorCard"
-import { useNavigate } from "react-router-dom"
-
-const colaboradores = [
-  {
-    nome: "Fernanda Torres",
-    email: "fernandatorres@flugo.com",
-    departamento: "Design",
-    status: "Ativo",
-  },
-  {
-    nome: "Joana D'Arc",
-    email: "joanadarc@flugo.com",
-    departamento: "TI",
-    status: "Ativo",
-  },
-  {
-    nome: "Mari Froes",
-    email: "marifroes@flugo.com",
-    departamento: "Marketing",
-    status: "Ativo",
-  },
-  {
-    nome: "Clara Costa",
-    email: "claracosta@flugo.com",
-    departamento: "Produto",
-    status: "Inativo",
-  },
-] as const
+import { useColaboradores } from "../hooks/useColaboradores"
 
 function CustomStatusChip({ status }: { status: string }) {
   const isActive = status === "Ativo"
@@ -68,6 +42,8 @@ export function Colaboradores() {
   const navigate = useNavigate()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
+  
+  const { colaboradores, loading } = useColaboradores()
 
   return (
     <Box flex={1} p={{ xs: 2, md: 4 }} bgcolor="background.default">
@@ -95,7 +71,9 @@ export function Colaboradores() {
         </Button>
       </Box>
 
-      {!isMobile && (
+      {loading && <Typography>Carregando...</Typography>}
+
+      {!loading && !isMobile && (
         <Paper elevation={0} sx={{ borderRadius: 2, overflow: "hidden" }}>
           <Table>
             <TableHead sx={{ bgcolor: "#F8FAFC" }}>
@@ -106,7 +84,7 @@ export function Colaboradores() {
                   </Box>
                 </TableCell>
                 <TableCell sx={{ color: "text.secondary", fontWeight: 600 }}>
-                  <Box display="flex" alignItems="center" gap={0.5} sx={{yb: 'cursor' }}>
+                  <Box display="flex" alignItems="center" gap={0.5} sx={{ cursor: 'pointer' }}>
                     Email <ArrowDownwardIcon sx={{ fontSize: 16 }} />
                   </Box>
                 </TableCell>
@@ -126,8 +104,8 @@ export function Colaboradores() {
             <TableBody>
               {colaboradores.map((col) => (
                 <TableRow
-                  key={col.email}
-                  sx={{ "&:last-child td, &:last-child th": {yb: 0} }}
+                  key={col.id || col.email}
+                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
                 >
                   <TableCell>
                     <Stack direction="row" alignItems="center" spacing={2}>
@@ -156,11 +134,16 @@ export function Colaboradores() {
         </Paper>
       )}
 
-      {isMobile && (
+      {!loading && isMobile && (
         <Grid container spacing={2}>
           {colaboradores.map((col) => (
-            <Grid key={col.email} size={12}>
-              <ColaboradorCard {...col} />
+            <Grid key={col.id || col.email} size={12}>
+              <ColaboradorCard 
+                nome={col.nome}
+                email={col.email}
+                departamento={col.departamento}
+                status={col.status as "Ativo" | "Inativo"}
+              />
             </Grid>
           ))}
         </Grid>
