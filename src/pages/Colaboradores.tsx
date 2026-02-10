@@ -11,15 +11,16 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  TableSortLabel,
   Typography,
   useMediaQuery,
   useTheme,
 } from "@mui/material"
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward"
+import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Header } from "../components/Header"
 import { ColaboradorCard } from "../components/ColaboradorCard"
-import { useColaboradores } from "../hooks/useColaboradores"
+import { useColaboradores, type Colaborador } from "../hooks/useColaboradores"
 
 function CustomStatusChip({ status }: { status: string }) {
   const isActive = status === "Ativo"
@@ -38,12 +39,36 @@ function CustomStatusChip({ status }: { status: string }) {
   )
 }
 
+type OrderableFields = keyof Pick<Colaborador, "nome" | "email" | "departamento" | "status">;
+
 export function Colaboradores() {
   const navigate = useNavigate()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   
   const { colaboradores, loading } = useColaboradores()
+
+  const [order, setOrder] = useState<'asc' | 'desc'>('asc')
+  const [orderBy, setOrderBy] = useState<OrderableFields>('nome')
+
+  const handleRequestSort = (property: OrderableFields) => {
+    const isAsc = orderBy === property && order === 'asc'
+    setOrder(isAsc ? 'desc' : 'asc')
+    setOrderBy(property)
+  }
+
+  const colaboradoresOrdenados = useMemo(() => {
+    return [...colaboradores].sort((a, b) => {
+      const aValue = a[orderBy] || ""
+      const bValue = b[orderBy] || ""
+
+      if (order === 'asc') {
+        return aValue.toString().localeCompare(bValue.toString())
+      } else {
+        return bValue.toString().localeCompare(aValue.toString())
+      }
+    })
+  }, [colaboradores, order, orderBy])
 
   return (
     <Box flex={1} p={{ xs: 2, md: 4 }} bgcolor="background.default">
@@ -78,31 +103,47 @@ export function Colaboradores() {
           <Table>
             <TableHead sx={{ bgcolor: "#F8FAFC" }}>
               <TableRow>
-                <TableCell sx={{ color: "text.secondary", fontWeight: 600 }}>
-                  <Box display="flex" alignItems="center" gap={0.5} sx={{ cursor: 'pointer' }}>
-                    Nome <ArrowDownwardIcon sx={{ fontSize: 16 }} />
-                  </Box>
+                <TableCell sx={{ fontWeight: 600 }}>
+                  <TableSortLabel
+                    active={orderBy === 'nome'}
+                    direction={orderBy === 'nome' ? order : 'asc'}
+                    onClick={() => handleRequestSort('nome')}
+                  >
+                    Nome
+                  </TableSortLabel>
                 </TableCell>
-                <TableCell sx={{ color: "text.secondary", fontWeight: 600 }}>
-                  <Box display="flex" alignItems="center" gap={0.5} sx={{ cursor: 'pointer' }}>
-                    Email <ArrowDownwardIcon sx={{ fontSize: 16 }} />
-                  </Box>
+                <TableCell sx={{ fontWeight: 600 }}>
+                  <TableSortLabel
+                    active={orderBy === 'email'}
+                    direction={orderBy === 'email' ? order : 'asc'}
+                    onClick={() => handleRequestSort('email')}
+                  >
+                    Email
+                  </TableSortLabel>
                 </TableCell>
-                <TableCell sx={{ color: "text.secondary", fontWeight: 600 }}>
-                  <Box display="flex" alignItems="center" gap={0.5}>
-                    Departamento <ArrowDownwardIcon sx={{ fontSize: 16 }} />
-                  </Box>
+                <TableCell sx={{ fontWeight: 600 }}>
+                  <TableSortLabel
+                    active={orderBy === 'departamento'}
+                    direction={orderBy === 'departamento' ? order : 'asc'}
+                    onClick={() => handleRequestSort('departamento')}
+                  >
+                    Departamento
+                  </TableSortLabel>
                 </TableCell>
-                <TableCell sx={{ color: "text.secondary", fontWeight: 600 }}>
-                  <Box display="flex" alignItems="center" gap={0.5}>
-                    Status <ArrowDownwardIcon sx={{ fontSize: 16 }} />
-                  </Box>
+                <TableCell sx={{ fontWeight: 600 }}>
+                  <TableSortLabel
+                    active={orderBy === 'status'}
+                    direction={orderBy === 'status' ? order : 'asc'}
+                    onClick={() => handleRequestSort('status')}
+                  >
+                    Status
+                  </TableSortLabel>
                 </TableCell>
               </TableRow>
             </TableHead>
 
             <TableBody>
-              {colaboradores.map((col) => (
+              {colaboradoresOrdenados.map((col) => (
                 <TableRow
                   key={col.id || col.email}
                   sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
@@ -127,6 +168,8 @@ export function Colaboradores() {
                   <TableCell>
                     <CustomStatusChip status={col.status} />
                   </TableCell>
+                  
+
                 </TableRow>
               ))}
             </TableBody>
@@ -136,7 +179,7 @@ export function Colaboradores() {
 
       {!loading && isMobile && (
         <Grid container spacing={2}>
-          {colaboradores.map((col) => (
+          {colaboradoresOrdenados.map((col) => (
             <Grid key={col.id || col.email} size={12}>
               <ColaboradorCard 
                 nome={col.nome}
