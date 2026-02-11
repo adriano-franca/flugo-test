@@ -11,3 +11,7 @@ Por conta do protótipo ser algo muito simples, acabei adicionando algumas coisa
 > Senha: senha123
 
 Também adicionei dinamicidade a tabela, que pode ser ordenada de acordo com os campos. Todos os outros requisitos também são atendidos. A única diferença do protótipo original foi a falta da logo da Flugo que não consegui encontrar em uma qualidade boa.
+
+Para acesso no vercel, deixei o link abaixo:
+
+> https://flugo-test.vercel.app/
