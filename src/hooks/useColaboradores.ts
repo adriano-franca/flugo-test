@@ -8,7 +8,8 @@ import {
   onSnapshot, 
   query, 
   orderBy, 
-  Timestamp 
+  Timestamp, 
+  writeBatch
 } from "firebase/firestore";
 import { db } from "../services/firebase";
 
@@ -69,6 +70,21 @@ export function useColaboradores() {
     }
   };
 
+  const removerVariosColaboradores = async (ids: string[]) => {
+    try {
+      const selecionados = writeBatch(db);
+      ids.forEach(id => {
+        const docRef = doc(db, "colaboradores", id);
+        selecionados.delete(docRef);
+      });
+      await selecionados.commit();
+      return true;
+    }catch (error) {
+      console.error("Erro ao excluir vários:", error);
+      return false;
+    }
+  };
+
   const editarColaborador = async (id: string, dados: Partial<Colaborador>) => {
     try {
       const docRef = doc(db, "colaboradores", id);
@@ -80,5 +96,5 @@ export function useColaboradores() {
     }
   };
 
-  return { colaboradores, loading, adicionarColaborador, removerColaborador, editarColaborador };
+  return { colaboradores, loading, adicionarColaborador, removerColaborador, removerVariosColaboradores, editarColaborador };
 }

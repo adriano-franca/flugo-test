@@ -2,6 +2,7 @@ import {
   Avatar,
   Box,
   Button,
+  Checkbox,
   Chip,
   Dialog,
   DialogActions,
@@ -56,16 +57,47 @@ export function Colaboradores() {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   
-  const { colaboradores, loading, removerColaborador, editarColaborador } = useColaboradores()
+  const { colaboradores, loading, removerColaborador, removerVariosColaboradores, editarColaborador } = useColaboradores()
 
   const [order, setOrder] = useState<'asc' | 'desc'>('asc')
   const [orderBy, setOrderBy] = useState<OrderableFields>('nome')
+  
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<string | null>(null)
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
 
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editingColaborador, setEditingColaborador] = useState<Colaborador | null>(null)
+
+  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
+      const allIds = colaboradores.map((c) => c.id!).filter(Boolean)
+      setSelectedIds(allIds)
+    } else {
+      setSelectedIds([])
+    }
+  }
+
+  const handleSelectOne = (id: string) => {
+    const selectedIndex = selectedIds.indexOf(id)
+    let newSelected: string[] = []
+
+    if (selectedIndex === -1) {
+      newSelected = newSelected.concat(selectedIds, id)
+    } else if (selectedIndex === 0) {
+      newSelected = newSelected.concat(selectedIds.slice(1))
+    } else if (selectedIndex === selectedIds.length - 1) {
+      newSelected = newSelected.concat(selectedIds.slice(0, -1))
+    } else if (selectedIndex > 0) {
+      newSelected = newSelected.concat(
+        selectedIds.slice(0, selectedIndex),
+        selectedIds.slice(selectedIndex + 1),
+      )
+    }
+    setSelectedIds(newSelected)
+  }
 
   const handleOpenDelete = (id: string) => {
     setItemToDelete(id)
@@ -77,7 +109,14 @@ export function Colaboradores() {
       await removerColaborador(itemToDelete)
       setDeleteDialogOpen(false)
       setItemToDelete(null)
+      setSelectedIds((prev) => prev.filter((id) => id !== itemToDelete))
     }
+  }
+
+  const handleConfirmBulkDelete = async () => {
+    await removerVariosColaboradores(selectedIds)
+    setBulkDeleteDialogOpen(false)
+    setSelectedIds([])
   }
 
   const handleOpenEdit = (colaborador: Colaborador) => {
@@ -131,16 +170,27 @@ export function Colaboradores() {
       >
         <Typography variant="h5">Colaboradores</Typography>
 
-        <Button
-          variant="contained"
-          color="primary"
-          disableElevation
-          fullWidth={isMobile}
-          sx={{ height: 40, px: 3 }}
-          onClick={() => navigate("/colaboradores/novo")}
-        >
-          Novo Colaborador
-        </Button>
+        {selectedIds.length > 0 ? (
+           <Button
+             variant="contained"
+             color="error"
+             onClick={() => setBulkDeleteDialogOpen(true)}
+             sx={{ height: 40 }}
+           >
+             Excluir Selecionados ({selectedIds.length})
+           </Button>
+        ) : (
+          <Button
+            variant="contained"
+            color="primary"
+            disableElevation
+            fullWidth={isMobile}
+            sx={{ height: 40, px: 3 }}
+            onClick={() => navigate("/colaboradores/novo")}
+          >
+            Novo Colaborador
+          </Button>
+        )}
       </Box>
 
       {loading && <Typography>Carregando...</Typography>}
@@ -150,6 +200,14 @@ export function Colaboradores() {
           <Table>
             <TableHead sx={{ bgcolor: "#F8FAFC" }}>
               <TableRow>
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    color="primary"
+                    indeterminate={selectedIds.length > 0 && selectedIds.length < colaboradores.length}
+                    checked={colaboradores.length > 0 && selectedIds.length === colaboradores.length}
+                    onChange={handleSelectAll}
+                  />
+                </TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>
                   <TableSortLabel
                     active={orderBy === 'nome'}
@@ -193,51 +251,65 @@ export function Colaboradores() {
             </TableHead>
 
             <TableBody>
-              {colaboradoresOrdenados.map((col) => (
-                <TableRow
-                  key={col.id || col.email}
-                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                >
-                  <TableCell>
-                    <Stack direction="row" alignItems="center" spacing={2}>
-                      <Avatar
-                        src={`https://i.pravatar.cc/150?u=${col.email}`}
-                        sx={{ width: 32, height: 32 }}
+              {colaboradoresOrdenados.map((col) => {
+                const isSelected = selectedIds.indexOf(col.id!) !== -1
+                return (
+                  <TableRow
+                    key={col.id || col.email}
+                    hover
+                    role="checkbox"
+                    aria-checked={isSelected}
+                    selected={isSelected}
+                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                  >
+                    <TableCell padding="checkbox">
+                      <Checkbox
+                        color="primary"
+                        checked={isSelected}
+                        onChange={() => handleSelectOne(col.id!)}
                       />
-                      <Typography variant="body2" fontWeight={500}>
-                        {col.nome}
-                      </Typography>
-                    </Stack>
-                  </TableCell>
-                  <TableCell sx={{ color: "text.secondary" }}>
-                    {col.email}
-                  </TableCell>
-                  <TableCell sx={{ color: "text.secondary" }}>
-                    {col.departamento}
-                  </TableCell>
-                  <TableCell>
-                    <CustomStatusChip status={col.status} />
-                  </TableCell>
-                  <TableCell align="right">
-                    <Stack direction="row" justifyContent="flex-end" spacing={1}>
-                      <Tooltip title="Editar">
-                        <IconButton size="small" onClick={() => handleOpenEdit(col)}>
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Excluir">
-                        <IconButton 
-                          size="small" 
-                          color="error"
-                          onClick={() => handleOpenDelete(col.id!)}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                    <TableCell>
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Avatar
+                          src={`https://i.pravatar.cc/150?u=${col.email}`}
+                          sx={{ width: 32, height: 32 }}
+                        />
+                        <Typography variant="body2" fontWeight={500}>
+                          {col.nome}
+                        </Typography>
+                      </Stack>
+                    </TableCell>
+                    <TableCell sx={{ color: "text.secondary" }}>
+                      {col.email}
+                    </TableCell>
+                    <TableCell sx={{ color: "text.secondary" }}>
+                      {col.departamento}
+                    </TableCell>
+                    <TableCell>
+                      <CustomStatusChip status={col.status} />
+                    </TableCell>
+                    <TableCell align="right">
+                      <Stack direction="row" justifyContent="flex-end" spacing={1}>
+                        <Tooltip title="Editar">
+                          <IconButton size="small" onClick={() => handleOpenEdit(col)}>
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Excluir">
+                          <IconButton 
+                            size="small" 
+                            color="error"
+                            onClick={() => handleOpenDelete(col.id!)}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </Paper>
@@ -252,6 +324,8 @@ export function Colaboradores() {
                 email={col.email}
                 departamento={col.departamento}
                 status={col.status as "Ativo" | "Inativo"}
+                selected={selectedIds.includes(col.id!)}
+                onToggleSelect={() => handleSelectOne(col.id!)}
                 onEdit={() => handleOpenEdit(col)}
                 onDelete={() => handleOpenDelete(col.id!)}
               />
@@ -268,6 +342,20 @@ export function Colaboradores() {
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
           <Button onClick={handleConfirmDelete} color="error" variant="contained">Excluir</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={bulkDeleteDialogOpen} onClose={() => setBulkDeleteDialogOpen(false)}>
+        <DialogTitle>Confirmar Exclusão em Massa</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Tem certeza que deseja remover <strong>{selectedIds.length}</strong> colaboradores selecionados? 
+            Essa ação não pode ser desfeita.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBulkDeleteDialogOpen(false)}>Cancelar</Button>
+          <Button onClick={handleConfirmBulkDelete} color="error" variant="contained">Excluir Todos</Button>
         </DialogActions>
       </Dialog>
 
