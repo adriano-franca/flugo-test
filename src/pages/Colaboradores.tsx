@@ -3,7 +3,13 @@ import {
   Box,
   Button,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
+  IconButton,
+  MenuItem,
   Paper,
   Stack,
   Table,
@@ -12,10 +18,14 @@ import {
   TableHead,
   TableRow,
   TableSortLabel,
+  TextField,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
 } from "@mui/material"
+import EditIcon from "@mui/icons-material/Edit"
+import DeleteIcon from "@mui/icons-material/Delete"
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Header } from "../components/Header"
@@ -46,10 +56,47 @@ export function Colaboradores() {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   
-  const { colaboradores, loading } = useColaboradores()
+  const { colaboradores, loading, removerColaborador, editarColaborador } = useColaboradores()
 
   const [order, setOrder] = useState<'asc' | 'desc'>('asc')
   const [orderBy, setOrderBy] = useState<OrderableFields>('nome')
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null)
+
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editingColaborador, setEditingColaborador] = useState<Colaborador | null>(null)
+
+  const handleOpenDelete = (id: string) => {
+    setItemToDelete(id)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (itemToDelete) {
+      await removerColaborador(itemToDelete)
+      setDeleteDialogOpen(false)
+      setItemToDelete(null)
+    }
+  }
+
+  const handleOpenEdit = (colaborador: Colaborador) => {
+    setEditingColaborador({ ...colaborador })
+    setEditDialogOpen(true)
+  }
+
+  const handleSaveEdit = async () => {
+    if (editingColaborador && editingColaborador.id) {
+      await editarColaborador(editingColaborador.id, {
+        nome: editingColaborador.nome,
+        email: editingColaborador.email,
+        departamento: editingColaborador.departamento,
+        status: editingColaborador.status
+      })
+      setEditDialogOpen(false)
+      setEditingColaborador(null)
+    }
+  }
 
   const handleRequestSort = (property: OrderableFields) => {
     const isAsc = orderBy === property && order === 'asc'
@@ -139,6 +186,9 @@ export function Colaboradores() {
                     Status
                   </TableSortLabel>
                 </TableCell>
+                <TableCell sx={{ fontWeight: 600 }} align="right">
+                  Ações
+                </TableCell>
               </TableRow>
             </TableHead>
 
@@ -168,8 +218,24 @@ export function Colaboradores() {
                   <TableCell>
                     <CustomStatusChip status={col.status} />
                   </TableCell>
-                  
-
+                  <TableCell align="right">
+                    <Stack direction="row" justifyContent="flex-end" spacing={1}>
+                      <Tooltip title="Editar">
+                        <IconButton size="small" onClick={() => handleOpenEdit(col)}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Excluir">
+                        <IconButton 
+                          size="small" 
+                          color="error"
+                          onClick={() => handleOpenDelete(col.id!)}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -186,11 +252,72 @@ export function Colaboradores() {
                 email={col.email}
                 departamento={col.departamento}
                 status={col.status as "Ativo" | "Inativo"}
+                onEdit={() => handleOpenEdit(col)}
+                onDelete={() => handleOpenDelete(col.id!)}
               />
             </Grid>
           ))}
         </Grid>
       )}
+
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Confirmar Exclusão</DialogTitle>
+        <DialogContent>
+          <Typography>Tem certeza que deseja remover este colaborador? Essa ação não pode ser desfeita.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+          <Button onClick={handleConfirmDelete} color="error" variant="contained">Excluir</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Editar Colaborador</DialogTitle>
+        <DialogContent>
+          {editingColaborador && (
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <TextField 
+                label="Nome" 
+                fullWidth 
+                value={editingColaborador.nome} 
+                onChange={(e) => setEditingColaborador({...editingColaborador, nome: e.target.value})}
+              />
+              <TextField 
+                label="Email" 
+                fullWidth 
+                value={editingColaborador.email} 
+                onChange={(e) => setEditingColaborador({...editingColaborador, email: e.target.value})}
+              />
+              <TextField
+                select
+                label="Departamento"
+                fullWidth
+                value={editingColaborador.departamento}
+                onChange={(e) => setEditingColaborador({...editingColaborador, departamento: e.target.value})}
+              >
+                <MenuItem value="TI">TI</MenuItem>
+                <MenuItem value="Design">Design</MenuItem>
+                <MenuItem value="Marketing">Marketing</MenuItem>
+                <MenuItem value="Produto">Produto</MenuItem>
+              </TextField>
+              <TextField
+                select
+                label="Status"
+                fullWidth
+                value={editingColaborador.status}
+                onChange={(e) => setEditingColaborador({...editingColaborador, status: e.target.value})}
+              >
+                <MenuItem value="Ativo">Ativo</MenuItem>
+                <MenuItem value="Inativo">Inativo</MenuItem>
+              </TextField>
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditDialogOpen(false)}>Cancelar</Button>
+          <Button onClick={handleSaveEdit} variant="contained">Salvar</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

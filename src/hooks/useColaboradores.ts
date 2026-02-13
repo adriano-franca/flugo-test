@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { 
   collection, 
-  addDoc, 
+  addDoc,
+  deleteDoc,
+  updateDoc,
+  doc,
   onSnapshot, 
   query, 
   orderBy, 
@@ -55,5 +58,27 @@ export function useColaboradores() {
     }
   };
 
-  return { colaboradores, loading, adicionarColaborador };
+  const removerColaborador = async (id: string) => {
+    try {
+      const docRef = doc(db, "colaboradores", id);
+      await deleteDoc(docRef);
+      return true;
+    } catch (error) {
+      console.error("Erro ao excluir:", error);
+      return false;
+    }
+  };
+
+  const editarColaborador = async (id: string, dados: Partial<Colaborador>) => {
+    try {
+      const docRef = doc(db, "colaboradores", id);
+      await updateDoc(docRef, dados);
+      return true;
+    } catch (error) {
+      console.error("Erro ao editar:", error);
+      return false;
+    }
+  };
+
+  return { colaboradores, loading, adicionarColaborador, removerColaborador, editarColaborador };
 }

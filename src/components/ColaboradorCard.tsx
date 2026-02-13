@@ -1,15 +1,19 @@
-import { Avatar, Box, Paper, Typography } from "@mui/material"
+import { Avatar, Box, IconButton, Paper, Typography } from "@mui/material"
 import { StatusChip } from "./StatusChip"
+import EditIcon from "@mui/icons-material/Edit"
+import DeleteIcon from "@mui/icons-material/Delete"
 
 type Props = {
   nome: string
   email: string
   departamento: string
   status: "Ativo" | "Inativo"
+  onEdit: () => void
+  onDelete: () => void
 }
 
 export function ColaboradorCard(props: Props) {
-  const { nome, email, departamento, status } = props
+  const { nome, email, departamento, status, onEdit, onDelete } = props
 
   return (
     <Paper sx={{ p: 2, borderRadius: 3 }}>
@@ -23,6 +27,15 @@ export function ColaboradorCard(props: Props) {
 
       <Box mt={1}>
         <StatusChip status={status} />
+
+        <Box>
+          <IconButton onClick={onEdit} size="small" color="primary">
+            <EditIcon />
+          </IconButton>
+          <IconButton onClick={onDelete} size="small" color="error">
+            <DeleteIcon />
+          </IconButton>
+        </Box>
       </Box>
     </Paper>
   )
