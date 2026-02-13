@@ -24,9 +24,11 @@ import {
   Typography,
   useMediaQuery,
   useTheme,
+  InputAdornment,
 } from "@mui/material"
 import EditIcon from "@mui/icons-material/Edit"
 import DeleteIcon from "@mui/icons-material/Delete"
+import SearchIcon from "@mui/icons-material/Search"
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Header } from "../components/Header"
@@ -71,9 +73,13 @@ export function Colaboradores() {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editingColaborador, setEditingColaborador] = useState<Colaborador | null>(null)
 
+  const [filtroNome, setFiltroNome] = useState("")
+  const [filtroEmail, setFiltroEmail] = useState("")
+  const [filtroDepartamento, setFiltroDepartamento] = useState("")
+
   const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
-      const allIds = colaboradores.map((c) => c.id!).filter(Boolean)
+      const allIds = colaboradoresFiltrados.map((c) => c.id!).filter(Boolean)
       setSelectedIds(allIds)
     } else {
       setSelectedIds([])
@@ -143,8 +149,20 @@ export function Colaboradores() {
     setOrderBy(property)
   }
 
+  const colaboradoresFiltrados = useMemo(() => {
+    return colaboradores.filter((col) => {
+      const matchNome = col.nome.toLowerCase().includes(filtroNome.toLowerCase())
+      const matchEmail = col.email.toLowerCase().includes(filtroEmail.toLowerCase())
+      const matchDepartamento = filtroDepartamento
+        ? col.departamento === filtroDepartamento
+        : true
+
+      return matchNome && matchEmail && matchDepartamento
+    })
+  }, [colaboradores, filtroNome, filtroEmail, filtroDepartamento])
+
   const colaboradoresOrdenados = useMemo(() => {
-    return [...colaboradores].sort((a, b) => {
+    return [...colaboradoresFiltrados].sort((a, b) => {
       const aValue = a[orderBy] || ""
       const bValue = b[orderBy] || ""
 
@@ -154,7 +172,7 @@ export function Colaboradores() {
         return bValue.toString().localeCompare(aValue.toString())
       }
     })
-  }, [colaboradores, order, orderBy])
+  }, [colaboradoresFiltrados, order, orderBy])
 
   return (
     <Box flex={1} p={{ xs: 2, md: 4 }} bgcolor="background.default">
@@ -193,6 +211,66 @@ export function Colaboradores() {
         )}
       </Box>
 
+      <Paper elevation={0} sx={{ p: 2, mb: 3, borderRadius: 2 }}>
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <TextField
+              label="Buscar por Nome"
+              variant="outlined"
+              size="small"
+              fullWidth
+              value={filtroNome}
+              onChange={(e) => setFiltroNome(e.target.value)}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon color="action" />
+                    </InputAdornment>
+                  ),
+                }
+              }}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <TextField
+              label="Buscar por Email"
+              variant="outlined"
+              size="small"
+              fullWidth
+              value={filtroEmail}
+              onChange={(e) => setFiltroEmail(e.target.value)}
+              slotProps={{
+                input: {
+                    startAdornment: (
+                    <InputAdornment position="start">
+                        <SearchIcon color="action" />
+                    </InputAdornment>
+                    ),
+                }
+              }}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <TextField
+              select
+              label="Departamento"
+              variant="outlined"
+              size="small"
+              fullWidth
+              value={filtroDepartamento}
+              onChange={(e) => setFiltroDepartamento(e.target.value)}
+            >
+              <MenuItem value="">Todos</MenuItem>
+              <MenuItem value="TI">TI</MenuItem>
+              <MenuItem value="Design">Design</MenuItem>
+              <MenuItem value="Marketing">Marketing</MenuItem>
+              <MenuItem value="Produto">Produto</MenuItem>
+            </TextField>
+          </Grid>
+        </Grid>
+      </Paper>
+
       {loading && <Typography>Carregando...</Typography>}
 
       {!loading && !isMobile && (
@@ -203,8 +281,8 @@ export function Colaboradores() {
                 <TableCell padding="checkbox">
                   <Checkbox
                     color="primary"
-                    indeterminate={selectedIds.length > 0 && selectedIds.length < colaboradores.length}
-                    checked={colaboradores.length > 0 && selectedIds.length === colaboradores.length}
+                    indeterminate={selectedIds.length > 0 && selectedIds.length < colaboradoresFiltrados.length}
+                    checked={colaboradoresFiltrados.length > 0 && selectedIds.length === colaboradoresFiltrados.length}
                     onChange={handleSelectAll}
                   />
                 </TableCell>
@@ -251,65 +329,73 @@ export function Colaboradores() {
             </TableHead>
 
             <TableBody>
-              {colaboradoresOrdenados.map((col) => {
-                const isSelected = selectedIds.indexOf(col.id!) !== -1
-                return (
-                  <TableRow
-                    key={col.id || col.email}
-                    hover
-                    role="checkbox"
-                    aria-checked={isSelected}
-                    selected={isSelected}
-                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                  >
-                    <TableCell padding="checkbox">
-                      <Checkbox
-                        color="primary"
-                        checked={isSelected}
-                        onChange={() => handleSelectOne(col.id!)}
-                      />
+              {colaboradoresOrdenados.length === 0 ? (
+                <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                        <Typography color="text.secondary">Nenhum colaborador encontrado.</Typography>
                     </TableCell>
-                    <TableCell>
-                      <Stack direction="row" alignItems="center" spacing={2}>
-                        <Avatar
-                          src={`https://i.pravatar.cc/150?u=${col.email}`}
-                          sx={{ width: 32, height: 32 }}
+                </TableRow>
+              ) : (
+                colaboradoresOrdenados.map((col) => {
+                    const isSelected = selectedIds.indexOf(col.id!) !== -1
+                    return (
+                    <TableRow
+                        key={col.id || col.email}
+                        hover
+                        role="checkbox"
+                        aria-checked={isSelected}
+                        selected={isSelected}
+                        sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                    >
+                        <TableCell padding="checkbox">
+                        <Checkbox
+                            color="primary"
+                            checked={isSelected}
+                            onChange={() => handleSelectOne(col.id!)}
                         />
-                        <Typography variant="body2" fontWeight={500}>
-                          {col.nome}
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-                    <TableCell sx={{ color: "text.secondary" }}>
-                      {col.email}
-                    </TableCell>
-                    <TableCell sx={{ color: "text.secondary" }}>
-                      {col.departamento}
-                    </TableCell>
-                    <TableCell>
-                      <CustomStatusChip status={col.status} />
-                    </TableCell>
-                    <TableCell align="right">
-                      <Stack direction="row" justifyContent="flex-end" spacing={1}>
-                        <Tooltip title="Editar">
-                          <IconButton size="small" onClick={() => handleOpenEdit(col)}>
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Excluir">
-                          <IconButton 
-                            size="small" 
-                            color="error"
-                            onClick={() => handleOpenDelete(col.id!)}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
+                        </TableCell>
+                        <TableCell>
+                        <Stack direction="row" alignItems="center" spacing={2}>
+                            <Avatar
+                            src={`https://i.pravatar.cc/150?u=${col.email}`}
+                            sx={{ width: 32, height: 32 }}
+                            />
+                            <Typography variant="body2" fontWeight={500}>
+                            {col.nome}
+                            </Typography>
+                        </Stack>
+                        </TableCell>
+                        <TableCell sx={{ color: "text.secondary" }}>
+                        {col.email}
+                        </TableCell>
+                        <TableCell sx={{ color: "text.secondary" }}>
+                        {col.departamento}
+                        </TableCell>
+                        <TableCell>
+                        <CustomStatusChip status={col.status} />
+                        </TableCell>
+                        <TableCell align="right">
+                        <Stack direction="row" justifyContent="flex-end" spacing={1}>
+                            <Tooltip title="Editar">
+                            <IconButton size="small" onClick={() => handleOpenEdit(col)}>
+                                <EditIcon fontSize="small" />
+                            </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Excluir">
+                            <IconButton 
+                                size="small" 
+                                color="error"
+                                onClick={() => handleOpenDelete(col.id!)}
+                            >
+                                <DeleteIcon fontSize="small" />
+                            </IconButton>
+                            </Tooltip>
+                        </Stack>
+                        </TableCell>
+                    </TableRow>
+                    )
+                })
+              )}
             </TableBody>
           </Table>
         </Paper>
@@ -317,20 +403,26 @@ export function Colaboradores() {
 
       {!loading && isMobile && (
         <Grid container spacing={2}>
-          {colaboradoresOrdenados.map((col) => (
-            <Grid key={col.id || col.email} size={12}>
-              <ColaboradorCard 
-                nome={col.nome}
-                email={col.email}
-                departamento={col.departamento}
-                status={col.status as "Ativo" | "Inativo"}
-                selected={selectedIds.includes(col.id!)}
-                onToggleSelect={() => handleSelectOne(col.id!)}
-                onEdit={() => handleOpenEdit(col)}
-                onDelete={() => handleOpenDelete(col.id!)}
-              />
+          {colaboradoresOrdenados.length === 0 ? (
+            <Grid size={{ xs: 12 }}>
+                 <Typography textAlign="center" color="text.secondary" mt={2}>Nenhum colaborador encontrado.</Typography>
             </Grid>
-          ))}
+          ) : (
+            colaboradoresOrdenados.map((col) => (
+                <Grid key={col.id || col.email} size={{ xs: 12 }}>
+                <ColaboradorCard 
+                    nome={col.nome}
+                    email={col.email}
+                    departamento={col.departamento}
+                    status={col.status as "Ativo" | "Inativo"}
+                    selected={selectedIds.includes(col.id!)}
+                    onToggleSelect={() => handleSelectOne(col.id!)}
+                    onEdit={() => handleOpenEdit(col)}
+                    onDelete={() => handleOpenDelete(col.id!)}
+                />
+                </Grid>
+            ))
+          )}
         </Grid>
       )}
 
