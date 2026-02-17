@@ -430,14 +430,14 @@ export function NovoColaborador() {
                         renderValue={(selected) => {
                             if (selected.length === 0) return <Typography color="text.secondary">Gestor Responsável (Opcional)</Typography>;
                             const gestor = gestoresDisponiveis.find(g => g.id === selected);
-                            return gestor ? gestor.nome : selected;
+                            return gestor ? `${gestor.nome} - ${gestor.departamento}` : selected;
                         }}
                     >
                         <MenuItem value="">
                           <Typography color="text.secondary">Nenhum</Typography>
                         </MenuItem>
                         {gestoresDisponiveis.map(g => (
-                          <MenuItem key={g.id} value={g.id}>{g.nome}</MenuItem>
+                          <MenuItem key={g.id} value={g.id}>{g.nome} - {g.departamento}</MenuItem>
                         ))}
                     </Select>
                 </FormControl>

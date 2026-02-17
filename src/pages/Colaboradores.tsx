@@ -143,11 +143,11 @@ export function Colaboradores() {
         nome: editingColaborador.nome,
         email: editingColaborador.email,
         departamento: editingColaborador.departamento,
-        cargo: editingColaborador.cargo,
-        dataAdmissao: editingColaborador.dataAdmissao,
-        nivel: editingColaborador.nivel,
-        gestorId: editingColaborador.gestorId,
-        salario: editingColaborador.salario,
+        cargo: editingColaborador.cargo || "", 
+        dataAdmissao: editingColaborador.dataAdmissao || "",
+        nivel: editingColaborador.nivel || "Júnior",
+        gestorId: editingColaborador.gestorId || "",
+        salario: editingColaborador.salario || "",
         status: editingColaborador.status
       })
       setEditDialogOpen(false)
@@ -567,7 +567,7 @@ export function Colaboradores() {
                 >
                     <MenuItem value="">Nenhum</MenuItem>
                     {gestoresDisponiveis.map(g => (
-                        <MenuItem key={g.id} value={g.id}>{g.nome}</MenuItem>
+                        <MenuItem key={g.id} value={g.id}>{g.nome} - {g.departamento}</MenuItem>
                     ))}
                 </Select>
               </FormControl>
