@@ -28,6 +28,7 @@ import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { Header } from "../components/Header"
 import { useColaboradores, type Colaborador } from "../hooks/useColaboradores"
+import { useDepartamentos } from "../hooks/useDepartamentos"
 
 const CustomConnector = styled(StepConnector)(({ theme }) => ({
   [`&.${stepConnectorClasses.alternativeLabel}`]: {
@@ -84,6 +85,7 @@ export function NovoColaborador() {
   const theme = useTheme()
   
   const { adicionarColaborador, colaboradores } = useColaboradores()
+  const { departamentos } = useDepartamentos()
 
   const [activeStep, setActiveStep] = useState(0)
   const [salvando, setSalvando] = useState(false)
@@ -351,10 +353,14 @@ export function NovoColaborador() {
                               return selected;
                           }}
                       >
-                          <MenuItem value="TI">TI</MenuItem>
-                          <MenuItem value="Design">Design</MenuItem>
-                          <MenuItem value="Marketing">Marketing</MenuItem>
-                          <MenuItem value="Produto">Produto</MenuItem>
+                          {departamentos.map((dept) => (
+                              <MenuItem key={dept.id} value={dept.nome}>
+                                  {dept.nome}
+                              </MenuItem>
+                          ))}
+                          {departamentos.length === 0 && (
+                             <MenuItem disabled value="">Nenhum departamento cadastrado</MenuItem>
+                          )}
                       </Select>
                       {errors.departamento && <FormHelperText>Selecione um departamento</FormHelperText>}
                   </FormControl>

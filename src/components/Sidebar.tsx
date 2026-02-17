@@ -14,6 +14,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import { useAuth } from "../contexts/AuthContext";
 import MenuIcon from "@mui/icons-material/Menu"
 import PeopleIcon from "@mui/icons-material/People"
+import BusinessIcon from "@mui/icons-material/Business"
 import { useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 
@@ -65,6 +66,35 @@ export function Sidebar() {
           </ListItemIcon>
           <ListItemText 
             primary="Colaboradores" 
+            primaryTypographyProps={{ fontWeight: 500 }}
+          />
+        </ListItemButton>
+
+        <ListItemButton
+          selected={location.pathname.startsWith("/departamentos")}
+          onClick={() => handleNavigate("/departamentos")}
+          sx={{
+            borderRadius: 2,
+            mb: 1,
+            "&.Mui-selected": {
+              backgroundColor: "#DCFCE7",
+              color: "primary.main",
+              "&:hover": {
+                backgroundColor: "#D1FAE5",
+              },
+              "& .MuiListItemIcon-root": {
+                color: "primary.main",
+              },
+            },
+          }}
+        >
+          <ListItemIcon>
+            <BusinessIcon 
+              color={location.pathname.startsWith("/departamentos") ? "primary" : "inherit"} 
+            />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Departamentos" 
             primaryTypographyProps={{ fontWeight: 500 }}
           />
         </ListItemButton>

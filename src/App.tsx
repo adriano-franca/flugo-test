@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Sidebar } from "./components/Sidebar";
 import { Colaboradores } from "./pages/Colaboradores";
 import { NovoColaborador } from "./pages/NovoColaborador";
+import { Departamentos } from "./pages/Departamentos";
+import { NovoDepartamento } from "./pages/NovoDepartamento";
 import { Login } from "./pages/Login";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { type ReactNode } from "react";
@@ -26,10 +28,8 @@ function App() {
   return (
     <AuthProvider>
       <Routes>
-        {/* Rota Pública (Login) */}
         <Route path="/login" element={<Login />} />
 
-        {/* Rotas Privadas (Protegidas) */}
         <Route 
           path="/colaboradores" 
           element={
@@ -38,7 +38,6 @@ function App() {
             </PrivateRoute>
           } 
         />
-        
         <Route 
           path="/colaboradores/novo" 
           element={
@@ -48,7 +47,23 @@ function App() {
           } 
         />
 
-        {/* Redirecionamento padrão */}
+        <Route 
+          path="/departamentos" 
+          element={
+            <PrivateRoute>
+              <Departamentos />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/departamentos/novo" 
+          element={
+            <PrivateRoute>
+              <NovoDepartamento />
+            </PrivateRoute>
+          } 
+        />
+
         <Route path="*" element={<Navigate to="/colaboradores" />} />
       </Routes>
     </AuthProvider>

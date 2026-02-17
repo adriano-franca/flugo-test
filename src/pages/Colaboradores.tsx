@@ -37,6 +37,7 @@ import { useNavigate } from "react-router-dom"
 import { Header } from "../components/Header"
 import { ColaboradorCard } from "../components/ColaboradorCard"
 import { useColaboradores, type Colaborador } from "../hooks/useColaboradores"
+import { useDepartamentos } from "../hooks/useDepartamentos"
 
 function CustomStatusChip({ status }: { status: string }) {
   const isActive = status === "Ativo"
@@ -63,6 +64,7 @@ export function Colaboradores() {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   
   const { colaboradores, loading, removerColaborador, removerVariosColaboradores, editarColaborador } = useColaboradores()
+  const { departamentos } = useDepartamentos()
 
   const [order, setOrder] = useState<'asc' | 'desc'>('asc')
   const [orderBy, setOrderBy] = useState<OrderableFields>('nome')
@@ -274,10 +276,9 @@ export function Colaboradores() {
               onChange={(e) => setFiltroDepartamento(e.target.value)}
             >
               <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="TI">TI</MenuItem>
-              <MenuItem value="Design">Design</MenuItem>
-              <MenuItem value="Marketing">Marketing</MenuItem>
-              <MenuItem value="Produto">Produto</MenuItem>
+              {departamentos.map(dept => (
+                <MenuItem key={dept.id} value={dept.nome}>{dept.nome}</MenuItem>
+              ))}
             </TextField>
           </Grid>
         </Grid>
@@ -510,10 +511,10 @@ export function Colaboradores() {
                         value={editingColaborador.departamento}
                         onChange={(e) => setEditingColaborador({...editingColaborador, departamento: e.target.value})}
                     >
-                        <MenuItem value="TI">TI</MenuItem>
-                        <MenuItem value="Design">Design</MenuItem>
-                        <MenuItem value="Marketing">Marketing</MenuItem>
-                        <MenuItem value="Produto">Produto</MenuItem>
+                        {departamentos.map(dept => (
+                            <MenuItem key={dept.id} value={dept.nome}>{dept.nome}</MenuItem>
+                        ))}
+                        {departamentos.length === 0 && <MenuItem disabled value="">Nenhum departamento cadastrado</MenuItem>}
                     </TextField>
                 </Grid>
                 <Grid size={{ xs: 6 }}>
