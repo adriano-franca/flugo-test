@@ -6,6 +6,8 @@ import DeleteIcon from "@mui/icons-material/Delete"
 type Props = {
   nome: string
   email: string
+  cargo: string
+  nivel: string
   departamento: string
   status: "Ativo" | "Inativo"
   selected: boolean
@@ -15,7 +17,7 @@ type Props = {
 }
 
 export function ColaboradorCard(props: Props) {
-  const { nome, email, departamento, status, selected, onToggleSelect, onEdit, onDelete } = props
+  const { nome, email, cargo, nivel, departamento, status, selected, onToggleSelect, onEdit, onDelete } = props
 
   return (
     <Paper 
@@ -40,11 +42,15 @@ export function ColaboradorCard(props: Props) {
         <Avatar src={`https://i.pravatar.cc/150?u=${email}`} />
         <Box>
           <Typography fontWeight="bold">{nome}</Typography>
-          <Typography variant="body2" color="text.secondary">{departamento}</Typography>
+          <Typography variant="body2" color="text.secondary">{email}</Typography>
         </Box>
       </Box>
 
-      <Typography variant="body2" mb={1}>{email}</Typography>
+      <Box mt={1} mb={2}>
+        <Typography variant="body2" fontWeight={500}>{cargo}</Typography>
+        <Typography variant="body2" color="text.secondary">{departamento}</Typography>
+        <Typography variant="caption" color="text.secondary">{nivel}</Typography>
+      </Box>
 
       <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
         <StatusChip status={status} />

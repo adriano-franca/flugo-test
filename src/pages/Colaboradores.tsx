@@ -25,6 +25,9 @@ import {
   useMediaQuery,
   useTheme,
   InputAdornment,
+  FormControl,
+  InputLabel,
+  Select,
 } from "@mui/material"
 import EditIcon from "@mui/icons-material/Edit"
 import DeleteIcon from "@mui/icons-material/Delete"
@@ -52,7 +55,7 @@ function CustomStatusChip({ status }: { status: string }) {
   )
 }
 
-type OrderableFields = keyof Pick<Colaborador, "nome" | "email" | "departamento" | "status">;
+type OrderableFields = keyof Pick<Colaborador, "nome" | "email" | "departamento" | "status" | "cargo" | "nivel">;
 
 export function Colaboradores() {
   const navigate = useNavigate()
@@ -76,6 +79,10 @@ export function Colaboradores() {
   const [filtroNome, setFiltroNome] = useState("")
   const [filtroEmail, setFiltroEmail] = useState("")
   const [filtroDepartamento, setFiltroDepartamento] = useState("")
+
+  const gestoresDisponiveis = useMemo(() => {
+    return colaboradores.filter(c => c.nivel === "Gestor" && c.id !== editingColaborador?.id)
+  }, [colaboradores, editingColaborador])
 
   const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
@@ -136,6 +143,11 @@ export function Colaboradores() {
         nome: editingColaborador.nome,
         email: editingColaborador.email,
         departamento: editingColaborador.departamento,
+        cargo: editingColaborador.cargo,
+        dataAdmissao: editingColaborador.dataAdmissao,
+        nivel: editingColaborador.nivel,
+        gestorId: editingColaborador.gestorId,
+        salario: editingColaborador.salario,
         status: editingColaborador.status
       })
       setEditDialogOpen(false)
@@ -297,11 +309,11 @@ export function Colaboradores() {
                 </TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>
                   <TableSortLabel
-                    active={orderBy === 'email'}
-                    direction={orderBy === 'email' ? order : 'asc'}
-                    onClick={() => handleRequestSort('email')}
+                    active={orderBy === 'cargo'}
+                    direction={orderBy === 'cargo' ? order : 'asc'}
+                    onClick={() => handleRequestSort('cargo')}
                   >
-                    Email
+                    Cargo
                   </TableSortLabel>
                 </TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>
@@ -311,6 +323,15 @@ export function Colaboradores() {
                     onClick={() => handleRequestSort('departamento')}
                   >
                     Departamento
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>
+                  <TableSortLabel
+                    active={orderBy === 'nivel'}
+                    direction={orderBy === 'nivel' ? order : 'asc'}
+                    onClick={() => handleRequestSort('nivel')}
+                  >
+                    Nível
                   </TableSortLabel>
                 </TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>
@@ -331,7 +352,7 @@ export function Colaboradores() {
             <TableBody>
               {colaboradoresOrdenados.length === 0 ? (
                 <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                         <Typography color="text.secondary">Nenhum colaborador encontrado.</Typography>
                     </TableCell>
                 </TableRow>
@@ -360,16 +381,20 @@ export function Colaboradores() {
                             src={`https://i.pravatar.cc/150?u=${col.email}`}
                             sx={{ width: 32, height: 32 }}
                             />
-                            <Typography variant="body2" fontWeight={500}>
-                            {col.nome}
-                            </Typography>
+                            <Stack>
+                                <Typography variant="body2" fontWeight={500}>{col.nome}</Typography>
+                                <Typography variant="caption" color="text.secondary">{col.email}</Typography>
+                            </Stack>
                         </Stack>
                         </TableCell>
                         <TableCell sx={{ color: "text.secondary" }}>
-                        {col.email}
+                        {col.cargo || "-"}
                         </TableCell>
                         <TableCell sx={{ color: "text.secondary" }}>
                         {col.departamento}
+                        </TableCell>
+                        <TableCell sx={{ color: "text.secondary" }}>
+                        {col.nivel || "-"}
                         </TableCell>
                         <TableCell>
                         <CustomStatusChip status={col.status} />
@@ -413,6 +438,8 @@ export function Colaboradores() {
                 <ColaboradorCard 
                     nome={col.nome}
                     email={col.email}
+                    cargo={col.cargo || "Sem cargo"}
+                    nivel={col.nivel || "-"}
                     departamento={col.departamento}
                     status={col.status as "Ativo" | "Inativo"}
                     selected={selectedIds.includes(col.id!)}
@@ -469,17 +496,82 @@ export function Colaboradores() {
                 onChange={(e) => setEditingColaborador({...editingColaborador, email: e.target.value})}
               />
               <TextField
-                select
-                label="Departamento"
+                label="Cargo"
                 fullWidth
-                value={editingColaborador.departamento}
-                onChange={(e) => setEditingColaborador({...editingColaborador, departamento: e.target.value})}
-              >
-                <MenuItem value="TI">TI</MenuItem>
-                <MenuItem value="Design">Design</MenuItem>
-                <MenuItem value="Marketing">Marketing</MenuItem>
-                <MenuItem value="Produto">Produto</MenuItem>
-              </TextField>
+                value={editingColaborador.cargo || ""}
+                onChange={(e) => setEditingColaborador({...editingColaborador, cargo: e.target.value})}
+              />
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 6 }}>
+                    <TextField
+                        select
+                        label="Departamento"
+                        fullWidth
+                        value={editingColaborador.departamento}
+                        onChange={(e) => setEditingColaborador({...editingColaborador, departamento: e.target.value})}
+                    >
+                        <MenuItem value="TI">TI</MenuItem>
+                        <MenuItem value="Design">Design</MenuItem>
+                        <MenuItem value="Marketing">Marketing</MenuItem>
+                        <MenuItem value="Produto">Produto</MenuItem>
+                    </TextField>
+                </Grid>
+                <Grid size={{ xs: 6 }}>
+                    <TextField
+                        select
+                        label="Nível"
+                        fullWidth
+                        value={editingColaborador.nivel || ""}
+                        onChange={(e) => setEditingColaborador({...editingColaborador, nivel: e.target.value as any})}
+                    >
+                        <MenuItem value="Júnior">Júnior</MenuItem>
+                        <MenuItem value="Pleno">Pleno</MenuItem>
+                        <MenuItem value="Sênior">Sênior</MenuItem>
+                        <MenuItem value="Gestor">Gestor</MenuItem>
+                    </TextField>
+                </Grid>
+              </Grid>
+
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 6 }}>
+                    <TextField
+                        label="Data de Admissão"
+                        type="date"
+                        fullWidth
+                        InputLabelProps={{ shrink: true }}
+                        value={editingColaborador.dataAdmissao || ""}
+                        onChange={(e) => setEditingColaborador({...editingColaborador, dataAdmissao: e.target.value})}
+                    />
+                </Grid>
+                <Grid size={{ xs: 6 }}>
+                    <TextField
+                        label="Salário Base"
+                        fullWidth
+                        value={editingColaborador.salario || ""}
+                        onChange={(e) => setEditingColaborador({...editingColaborador, salario: e.target.value})}
+                        slotProps={{
+                            input: {
+                                startAdornment: <InputAdornment position="start">R$</InputAdornment>,
+                            }
+                        }}
+                    />
+                </Grid>
+              </Grid>
+
+              <FormControl fullWidth>
+                <InputLabel>Gestor Responsável</InputLabel>
+                <Select
+                    label="Gestor Responsável"
+                    value={editingColaborador.gestorId || ""}
+                    onChange={(e) => setEditingColaborador({...editingColaborador, gestorId: e.target.value})}
+                >
+                    <MenuItem value="">Nenhum</MenuItem>
+                    {gestoresDisponiveis.map(g => (
+                        <MenuItem key={g.id} value={g.id}>{g.nome}</MenuItem>
+                    ))}
+                </Select>
+              </FormControl>
+
               <TextField
                 select
                 label="Status"

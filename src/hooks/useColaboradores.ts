@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 import { 
   collection, 
-  addDoc,
+  addDoc, 
   deleteDoc,
   updateDoc,
   doc,
+  writeBatch,
   onSnapshot, 
   query, 
   orderBy, 
-  Timestamp, 
-  writeBatch
+  Timestamp 
 } from "firebase/firestore";
 import { db } from "../services/firebase";
 
@@ -18,6 +18,11 @@ export type Colaborador = {
   nome: string;
   email: string;
   departamento: string;
+  cargo: string;
+  dataAdmissao: string;
+  nivel: "Júnior" | "Pleno" | "Sênior" | "Gestor";
+  gestorId?: string;
+  salario: string;
   status: string;
   ativo?: boolean;
   createdAt?: Timestamp;
@@ -46,9 +51,7 @@ export function useColaboradores() {
   const adicionarColaborador = async (dados: Omit<Colaborador, 'id' | 'createdAt' | 'status'> & { ativo: boolean }) => {
     try {
       await addDoc(collection(db, "colaboradores"), {
-        nome: dados.nome,
-        email: dados.email,
-        departamento: dados.departamento,
+        ...dados,
         status: dados.ativo ? "Ativo" : "Inativo", 
         createdAt: Timestamp.now()
       });

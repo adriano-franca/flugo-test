@@ -21,12 +21,13 @@ import {
   stepConnectorClasses,
   styled,
   useTheme,
+  InputAdornment,
 } from "@mui/material"
 import Check from "@mui/icons-material/Check"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { Header } from "../components/Header"
-import { useColaboradores } from "../hooks/useColaboradores"
+import { useColaboradores, type Colaborador } from "../hooks/useColaboradores"
 
 const CustomConnector = styled(StepConnector)(({ theme }) => ({
   [`&.${stepConnectorClasses.alternativeLabel}`]: {
@@ -82,7 +83,7 @@ export function NovoColaborador() {
   const navigate = useNavigate()
   const theme = useTheme()
   
-  const { adicionarColaborador } = useColaboradores()
+  const { adicionarColaborador, colaboradores } = useColaboradores()
 
   const [activeStep, setActiveStep] = useState(0)
   const [salvando, setSalvando] = useState(false)
@@ -92,13 +93,26 @@ export function NovoColaborador() {
     email: "",
     ativo: true,
     departamento: "",
+    cargo: "",
+    dataAdmissao: "",
+    nivel: "" as Colaborador["nivel"],
+    gestorId: "",
+    salario: ""
   })
 
   const [errors, setErrors] = useState({
     nome: false,
     email: false,
-    departamento: false
+    departamento: false,
+    cargo: false,
+    dataAdmissao: false,
+    nivel: false,
+    salario: false
   })
+
+  const gestoresDisponiveis = useMemo(() => {
+    return colaboradores.filter(c => c.nivel === "Gestor")
+  }, [colaboradores])
 
   const steps = [
     { label: "Infos Básicas" },
@@ -107,22 +121,43 @@ export function NovoColaborador() {
 
   const validateStep = () => {
     let isValid = true
-    const newErrors = { nome: false, email: false, departamento: false }
+    const newErrors = { ...errors }
 
     if (activeStep === 0) {
       if (!formData.nome.trim()) {
         newErrors.nome = true
         isValid = false
-      }
+      } else newErrors.nome = false
+
       if (!formData.email.trim()) {
         newErrors.email = true
         isValid = false
-      }
+      } else newErrors.email = false
     } else if (activeStep === 1) {
       if (!formData.departamento) {
         newErrors.departamento = true
         isValid = false
-      }
+      } else newErrors.departamento = false
+
+      if (!formData.cargo.trim()) {
+        newErrors.cargo = true
+        isValid = false
+      } else newErrors.cargo = false
+
+      if (!formData.dataAdmissao) {
+        newErrors.dataAdmissao = true
+        isValid = false
+      } else newErrors.dataAdmissao = false
+
+      if (!formData.nivel) {
+        newErrors.nivel = true
+        isValid = false
+      } else newErrors.nivel = false
+
+      if (!formData.salario.trim()) {
+        newErrors.salario = true
+        isValid = false
+      } else newErrors.salario = false
     }
 
     setErrors(newErrors)
@@ -136,10 +171,8 @@ export function NovoColaborador() {
       setSalvando(true)
       
       const sucesso = await adicionarColaborador({
-        nome: formData.nome,
-        email: formData.email,
-        departamento: formData.departamento,
-        ativo: formData.ativo
+        ...formData,
+        gestorId: formData.gestorId || undefined
       })
 
       setSalvando(false)
@@ -254,9 +287,7 @@ export function NovoColaborador() {
                   }}
                   error={errors.nome}
                   helperText={errors.nome ? "O nome é obrigatório" : ""}
-                  sx={{
-                    "& .MuiOutlinedInput-root": { borderRadius: 2 }
-                  }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                 />
                 
                 <TextField
@@ -272,9 +303,7 @@ export function NovoColaborador() {
                   }}
                   error={errors.email}
                   helperText={errors.email ? "O e-mail é obrigatório" : ""}
-                  sx={{
-                    "& .MuiOutlinedInput-root": { borderRadius: 2 }
-                  }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                 />
 
                 <FormControlLabel
@@ -290,36 +319,132 @@ export function NovoColaborador() {
               </Stack>
             )}
 
-            {/* Passo 2 */}
             {activeStep === 1 && (
               <Stack spacing={3} maxWidth={600}>
-                <FormControl fullWidth error={errors.departamento} required>
+                <TextField
+                  label="Cargo"
+                  variant="outlined"
+                  fullWidth
+                  required
+                  value={formData.cargo}
+                  onChange={(e) => {
+                    setFormData({...formData, cargo: e.target.value})
+                    if(errors.cargo) setErrors({...errors, cargo: false})
+                  }}
+                  error={errors.cargo}
+                  helperText={errors.cargo ? "O cargo é obrigatório" : ""}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+                />
+
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                  <FormControl fullWidth error={errors.departamento} required>
+                      <Select
+                          displayEmpty
+                          value={formData.departamento}
+                          onChange={(e) => {
+                              setFormData({...formData, departamento: e.target.value})
+                              if(errors.departamento) setErrors({...errors, departamento: false})
+                          }}
+                          sx={{ borderRadius: 2 }}
+                          renderValue={(selected) => {
+                              if (selected.length === 0) return <Typography color="text.secondary">Departamento</Typography>;
+                              return selected;
+                          }}
+                      >
+                          <MenuItem value="TI">TI</MenuItem>
+                          <MenuItem value="Design">Design</MenuItem>
+                          <MenuItem value="Marketing">Marketing</MenuItem>
+                          <MenuItem value="Produto">Produto</MenuItem>
+                      </Select>
+                      {errors.departamento && <FormHelperText>Selecione um departamento</FormHelperText>}
+                  </FormControl>
+
+                  <FormControl fullWidth error={errors.nivel} required>
+                      <Select
+                          displayEmpty
+                          value={formData.nivel}
+                          onChange={(e) => {
+                              setFormData({...formData, nivel: e.target.value as any})
+                              if(errors.nivel) setErrors({...errors, nivel: false})
+                          }}
+                          sx={{ borderRadius: 2 }}
+                          renderValue={(selected) => {
+                              if (selected.length === 0) return <Typography color="text.secondary">Nível Hierárquico</Typography>;
+                              return selected;
+                          }}
+                      >
+                          <MenuItem value="Júnior">Júnior</MenuItem>
+                          <MenuItem value="Pleno">Pleno</MenuItem>
+                          <MenuItem value="Sênior">Sênior</MenuItem>
+                          <MenuItem value="Gestor">Gestor</MenuItem>
+                      </Select>
+                      {errors.nivel && <FormHelperText>Selecione um nível</FormHelperText>}
+                  </FormControl>
+                </Stack>
+
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                  <TextField
+                    label="Data de Admissão"
+                    type="date"
+                    variant="outlined"
+                    fullWidth
+                    required
+                    InputLabelProps={{ shrink: true }}
+                    value={formData.dataAdmissao}
+                    onChange={(e) => {
+                      setFormData({...formData, dataAdmissao: e.target.value})
+                      if(errors.dataAdmissao) setErrors({...errors, dataAdmissao: false})
+                    }}
+                    error={errors.dataAdmissao}
+                    helperText={errors.dataAdmissao ? "Data obrigatória" : ""}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+                  />
+
+                  <TextField
+                    label="Salário Base"
+                    variant="outlined"
+                    fullWidth
+                    required
+                    value={formData.salario}
+                    onChange={(e) => {
+                      setFormData({...formData, salario: e.target.value})
+                      if(errors.salario) setErrors({...errors, salario: false})
+                    }}
+                    error={errors.salario}
+                    helperText={errors.salario ? "Salário obrigatório" : ""}
+                    slotProps={{
+                        input: {
+                            startAdornment: <InputAdornment position="start">R$</InputAdornment>,
+                        }
+                    }}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+                  />
+                </Stack>
+
+                <FormControl fullWidth>
                     <Select
                         displayEmpty
-                        value={formData.departamento}
-                        onChange={(e) => {
-                            setFormData({...formData, departamento: e.target.value})
-                            if(errors.departamento) setErrors({...errors, departamento: false})
-                        }}
+                        value={formData.gestorId}
+                        onChange={(e) => setFormData({...formData, gestorId: e.target.value})}
                         sx={{ borderRadius: 2 }}
                         renderValue={(selected) => {
-                            if (selected.length === 0) {
-                            return <Typography color={errors.departamento ? "error" : "text.secondary"}>Selecione um departamento</Typography>;
-                            }
-                            return selected;
+                            if (selected.length === 0) return <Typography color="text.secondary">Gestor Responsável (Opcional)</Typography>;
+                            const gestor = gestoresDisponiveis.find(g => g.id === selected);
+                            return gestor ? gestor.nome : selected;
                         }}
                     >
-                        <MenuItem value="TI">TI</MenuItem>
-                        <MenuItem value="Design">Design</MenuItem>
-                        <MenuItem value="Marketing">Marketing</MenuItem>
-                        <MenuItem value="Produto">Produto</MenuItem>
+                        <MenuItem value="">
+                          <Typography color="text.secondary">Nenhum</Typography>
+                        </MenuItem>
+                        {gestoresDisponiveis.map(g => (
+                          <MenuItem key={g.id} value={g.id}>{g.nome}</MenuItem>
+                        ))}
                     </Select>
-                    {errors.departamento && <FormHelperText>Selecione uma opção</FormHelperText>}
                 </FormControl>
+
               </Stack>
             )}
 
-            {/* Rodapé com Botões */}
             <Box display="flex" justifyContent="space-between" alignItems="center" maxWidth={600} mt={8}>
                 <Button 
                     onClick={handleBack}
