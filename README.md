@@ -9,6 +9,7 @@ Para rodar o projeto localmente é preciso usar as credenciais que enviei para a
 Por conta do protótipo ser algo muito simples, acabei adicionando algumas coisas a mais, como uma tela de login, as credenciais para acesso são:
 
 > Login: admin@flugo.com
+
 > Senha: senha123
 
 Também adicionei dinamicidade a tabela, que pode ser ordenada de acordo com os campos. Todos os outros requisitos também são atendidos. A única diferença do protótipo original foi a falta da logo da Flugo que não consegui encontrar em uma qualidade boa.
