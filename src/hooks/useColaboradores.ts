@@ -50,13 +50,15 @@ export function useColaboradores() {
     return () => unsubscribe();
   }, []);
 
-  // Função auxiliar para encontrar departamento pelo nome
-  const findDepartamentoIdByName = async (nomeDepartamento: string) => {
+  const findDepartamentoByName = async (nomeDepartamento: string) => {
     if (!nomeDepartamento) return null;
     const q = query(collection(db, "departamentos"), where("nome", "==", nomeDepartamento));
     const querySnapshot = await getDocs(q);
     if (!querySnapshot.empty) {
-      return querySnapshot.docs[0].id;
+      return {
+        id: querySnapshot.docs[0].id,
+        data: querySnapshot.docs[0].data()
+      };
     }
     return null;
   };
@@ -65,23 +67,31 @@ export function useColaboradores() {
     try {
       const batch = writeBatch(db);
       
-      // 1. Cria a referência para o novo colaborador
       const novoColaboradorRef = doc(collection(db, "colaboradores"));
       
-      batch.set(novoColaboradorRef, {
-        ...dados,
-        status: dados.ativo ? "Ativo" : "Inativo", 
-        createdAt: Timestamp.now()
-      });
+      let finalGestorId = dados.gestorId || "";
+      const departamentoInfo = await findDepartamentoByName(dados.departamento);
 
-      // 2. Tenta encontrar o departamento para vincular
-      const departamentoId = await findDepartamentoIdByName(dados.departamento);
-      if (departamentoId) {
-        const departamentoRef = doc(db, "departamentos", departamentoId);
+      if (departamentoInfo) {
+        const gestorDoDepartamento = departamentoInfo.data.gestorId;
+        if (novoColaboradorRef.id === gestorDoDepartamento) {
+          finalGestorId = "";
+        } else if (gestorDoDepartamento) {
+          finalGestorId = gestorDoDepartamento;
+        }
+
+        const departamentoRef = doc(db, "departamentos", departamentoInfo.id);
         batch.update(departamentoRef, {
           colaboradoresIds: arrayUnion(novoColaboradorRef.id)
         });
       }
+
+      batch.set(novoColaboradorRef, {
+        ...dados,
+        gestorId: finalGestorId,
+        status: dados.ativo ? "Ativo" : "Inativo", 
+        createdAt: Timestamp.now()
+      });
 
       await batch.commit();
       return true;
@@ -93,7 +103,6 @@ export function useColaboradores() {
 
   const removerColaborador = async (id: string) => {
     try {
-      // Primeiro precisamos saber qual é o departamento dele para remover o ID de lá
       const colaboradorRef = doc(db, "colaboradores", id);
       const colaboradorSnap = await getDoc(colaboradorRef);
       
@@ -101,10 +110,10 @@ export function useColaboradores() {
 
       if (colaboradorSnap.exists()) {
         const dados = colaboradorSnap.data() as Colaborador;
-        const departamentoId = await findDepartamentoIdByName(dados.departamento);
+        const departamentoInfo = await findDepartamentoByName(dados.departamento);
         
-        if (departamentoId) {
-            const departamentoRef = doc(db, "departamentos", departamentoId);
+        if (departamentoInfo) {
+            const departamentoRef = doc(db, "departamentos", departamentoInfo.id);
             batch.update(departamentoRef, {
                 colaboradoresIds: arrayRemove(id)
             });
@@ -124,9 +133,6 @@ export function useColaboradores() {
     try {
       const batch = writeBatch(db);
       
-      // Para cada ID, precisamos fazer o processo de limpeza (simplificado aqui para delete direto, 
-      // mas idealmente deveria limpar os departamentos também. Se for muito volume, melhor fazer cloud function)
-      // Vou manter a deleção simples para não estourar limite de leituras em massa num loop
       ids.forEach(id => {
         const docRef = doc(db, "colaboradores", id);
         batch.delete(docRef);
@@ -149,30 +155,33 @@ export function useColaboradores() {
 
       const dadosAtuais = colaboradorSnap.data() as Colaborador;
       const batch = writeBatch(db);
+      const dadosParaAtualizar = { ...novosDados };
 
-      // Atualiza os dados do colaborador
-      batch.update(colaboradorRef, novosDados);
-
-      // Verifica se houve mudança de departamento
       if (novosDados.departamento && novosDados.departamento !== dadosAtuais.departamento) {
-        // 1. Remove do departamento antigo
-        const deptAntigoId = await findDepartamentoIdByName(dadosAtuais.departamento);
-        if (deptAntigoId) {
-          const deptAntigoRef = doc(db, "departamentos", deptAntigoId);
+        
+        const deptAntigoInfo = await findDepartamentoByName(dadosAtuais.departamento);
+        if (deptAntigoInfo) {
+          const deptAntigoRef = doc(db, "departamentos", deptAntigoInfo.id);
           batch.update(deptAntigoRef, {
             colaboradoresIds: arrayRemove(id)
           });
         }
 
-        // 2. Adiciona no novo departamento
-        const deptNovoId = await findDepartamentoIdByName(novosDados.departamento);
-        if (deptNovoId) {
-          const deptNovoRef = doc(db, "departamentos", deptNovoId);
+        const deptNovoInfo = await findDepartamentoByName(novosDados.departamento);
+        if (deptNovoInfo) {
+          const deptNovoRef = doc(db, "departamentos", deptNovoInfo.id);
           batch.update(deptNovoRef, {
             colaboradoresIds: arrayUnion(id)
           });
+
+          const novoGestorId = deptNovoInfo.data.gestorId;
+          dadosParaAtualizar.gestorId = (id === novoGestorId) ? "" : (novoGestorId || "");
+        } else {
+           dadosParaAtualizar.gestorId = "";
         }
       }
+
+      batch.update(colaboradorRef, dadosParaAtualizar);
 
       await batch.commit();
       return true;
